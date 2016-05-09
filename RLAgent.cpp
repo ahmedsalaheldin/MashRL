@@ -33,10 +33,10 @@ int main(int argc, char** argv)
 	ArgumentsList arg ;
 	ArgumentsList actions ;
 	ArgumentsList empty;
-	string task = "reach_1_flag"; // reach flag task
-	//string task = "follow_the_line"; // follow line task
-	string environment = "SingleRoom"; // reach flag task
-	//string environment = "line"; // follow line task
+	//string task = "reach_1_flag"; // reach flag task
+	string task = "follow_the_line"; // follow line task
+	//string environment = "SingleRoom"; // reach flag task
+	string environment = "line"; // follow line task
 
 
 ///////////Connect to MASH Server/////////////
@@ -135,43 +135,7 @@ int main(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //				MAKE PREDICTION
 ///////////////////////////////////////////////////////////////////////////////////////////////	
-/*
-			//fill message
-			float average;
 
-			StringBuffer s;
-			Writer<StringBuffer> writer(s);
-
-			writer.StartObject();
-			writer.String("A");
-			writer.StartArray();
-
-			cout<<(float)replystr[0]<<endl;
-			cout<<(float)replystr[60]<<endl;
-			cout<<(float)replystr[400]<<endl;
-			cout<<(float)replystr[3000]<<endl;
-			cout<<(float)replystr[10000]<<endl;
-
-			cout<<replystr[0]<<endl;
-			cout<<replystr[60]<<endl;
-			cout<<replystr[400]<<endl;
-			cout<<replystr[3000]<<endl;
-			cout<<replystr[10000]<<endl;
-
-			for(int i=0;i<(datasize);i+=3)
-			{
-				average = 0.2126*(float)replystr[i] + 0.7152*(float)replystr[i+1] + 0.0722*(float)replystr[i+2];
-				if(average<0){
-					//average = 110000;
-					cout<<average<<endl;}
-				writer.Double((int)average);
-			}
-			writer.EndArray();
-			writer.EndObject();
-
-			msgstring= s.GetString();
-			//int msgsize=msgstring.length();
-*/
 			// send frame to prediction server
 			msgstring = replystr;
 			zmq::message_t request (msgstring.length());
