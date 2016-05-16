@@ -16,7 +16,12 @@ using namespace Mash;
 using namespace rapidjson;
 
 
-
+string Convert (float number)
+{
+    std::ostringstream buff;
+    buff<<number;
+    return buff.str();   
+}
 
 
 int main(int argc, char** argv)
@@ -36,7 +41,8 @@ int main(int argc, char** argv)
 	//string task = "reach_1_flag"; // reach flag task
 	string task = "follow_the_line"; // follow line task
 	//string environment = "SingleRoom"; // reach flag task
-	string environment = "line"; // follow line task
+	string environment = "Line"; // follow line task
+	int frame_skip = 4;
 
 
 ///////////Connect to MASH Server/////////////
@@ -53,7 +59,7 @@ int main(int argc, char** argv)
 
 
 	socket2.connect ("tcp://localhost:5555"); // if client
-
+	cout<<"connected"<<endl;
 
 	// declare zmq message variables 
 
@@ -80,12 +86,13 @@ int main(int argc, char** argv)
 	string replystr;
 
 	// Send Task
+	cout<<"sending"<<endl;
 	zmq::message_t msg_task (task.length());
 	memcpy ((void *) msg_task.data (), task.c_str(), task.length());
 	socket.send (msg_task);	
 
 	//receive ok
-
+	cout<<"receiving"<<endl;
 	socket.recv (&reply); // 
 	replystr = string(static_cast<char*>(reply.data()), reply.size());
 	cout<< replystr <<endl;
@@ -107,7 +114,7 @@ int main(int argc, char** argv)
 	/////START PLAYING///////////////
 	/////////////////////////////////
 
-
+	cout<<"im gonna start playing"<<endl;
 
 	arg.clear();
 	arg.add("main");
@@ -152,8 +159,9 @@ int main(int argc, char** argv)
 
 			
 ///////////////////////////////////////////////////////////////////////////////////////////////	
-
-
+			float accReward=0;
+			for(int i=0;i<frame_skip;i++)
+			{
 			//send action
 			//cout<< "sendaction" <<endl;
 			zmq::message_t actionmsg (predictionStr.length());
@@ -175,7 +183,13 @@ int main(int argc, char** argv)
 			//cout<< "recreward" <<endl;
 			socket.recv (&reply); // 
 			reward_string = string(static_cast<char*>(reply.data()), reply.size());
-	
+
+			//cout<<"reward_string = " << reward_string<< endl;
+			accReward+= atof(reward_string.c_str());
+			//cout<<"accReward = " << accReward<< endl;		
+			}
+
+			reward_string = Convert(accReward);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //       			 send reward to DQN
