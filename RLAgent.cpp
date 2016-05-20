@@ -185,7 +185,7 @@ int main(int argc, char** argv)
 			//cout<< "getsuggestion" <<endl;
 			socket.recv (&reply); // 
 			replystr = string(static_cast<char*>(reply.data()), reply.size());
-			cout<<"suggested action  "<<replystr<<endl;
+			//cout<<"suggested action  "<<replystr<<endl;
 			//get reward
 			//cout<< "getreward" <<endl;
 			zmq::message_t getreward (10);
@@ -244,7 +244,7 @@ int main(int argc, char** argv)
 			replystr = string(static_cast<char*>(reply.data()), reply.size());
 
 			counter++;
-		}//End of one round
+		}//End of one round ///////////////////////////////////////////////
 
 		if(replystr=="FINISHED")
 			numFinish++;
@@ -253,11 +253,21 @@ int main(int argc, char** argv)
 		memcpy ((void *) resettask.data (), "RESET", 5);
 		socket.send (resettask);
 		
-		//receive reward
-		//cout<< "recreward" <<endl;
+		//receive OK
 		socket.recv (&reply); // 
 		replystr = string(static_cast<char*>(reply.data()), reply.size());
 
+		///////send terminal to RL server///////////////////////////////////
+		msgstring = "TERMINAL";
+		zmq::message_t request (msgstring.length());
+		memcpy ((void *) request.data (), msgstring.c_str(), msgstring.length());
+
+		socket2.send (request);
+
+		//get thanks
+		socket2.recv (&reply);
+
+		////////////////////////////////////////////
 		result <<i<<","<< numFinish << endl;
 		cout<<"numfinished  = "<<numFinish<<endl;
 	}// end of all rounds

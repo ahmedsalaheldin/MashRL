@@ -179,7 +179,7 @@ class ALEExperiment(object):
     def getmashaction(self,mash_message):
 	''' get reward from mash-simulator'''
 	#mash_message = self.socket.recv()
-	print "suggested action = ", mash_message
+	#print "suggested action = ", mash_message
 
 	if mash_message=="TURN_LEFT":
 		return 0
@@ -202,6 +202,7 @@ class ALEExperiment(object):
 
         """
 
+	print "maxsteps = ", max_steps
 
         self._init_episode()
 
@@ -212,6 +213,10 @@ class ALEExperiment(object):
 		mashobservation = self.getmashImage(mash_message)
 		action = self.agent.start_episode(mashobservation)
 	else:
+		dummyobservation=np.zeros((90,120))
+		dummyobservation= self.resize_image(dummyobservation)
+		dummyobservation=dummyobservation.astype(np.uint8)
+		action = self.agent.start_episode(dummyobservation)
 		action = self.getmashaction(mash_message)
 
 	
@@ -220,6 +225,8 @@ class ALEExperiment(object):
 	print "action = " , action
         num_steps = 0
         while True:
+
+	    terminal=0
 	    #print "waiting for godo"
 	    #mash_message = self.socket.recv()
 	    #mash_dec = json.loads(mash_message)
@@ -234,21 +241,25 @@ class ALEExperiment(object):
             #reward = self._step(self.min_action_set[action])
 	    
 
-            self.terminal_lol = (self.death_ends_episode and not testing and
+            '''self.terminal_lol = (self.death_ends_episode and not testing and
                                  self.ale.lives() < start_lives)
-            terminal = self.ale.game_over() or self.terminal_lol
+            terminal = self.ale.game_over() or self.terminal_lol'''
             num_steps += 1
 
-            if terminal or num_steps >= max_steps:#only condition is max steps, if task is done it is reset from the mash client
-                self.agent.end_episode(reward, terminal)
-                break
 
 	    mash_message = self.socket.recv()
 	    if len(mash_message)>100:
 	        	mashobservation = self.getmashImage(mash_message)
 	 	        action = self.agent.step(reward, mashobservation)
+	    elif  mash_message=="TERMINAL":
+			terminal =1
+	   		self.socket.send("Thanks")
 	    else:
 	        	action = self.getmashaction(mash_message)
+
+            if terminal or num_steps >= max_steps: #terminal is sent from mash simulator
+                self.agent.end_episode(reward, terminal)
+                break
 
 	    #print "action = " , action
 	    #action = self.agent.step(reward, self.get_observation())
