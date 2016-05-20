@@ -17,7 +17,7 @@ class Defaults:
     # ----------------------
     STEPS_PER_EPOCH = 250000
     EPOCHS = 200
-    STEPS_PER_TEST = 125000
+    STEPS_PER_TEST = 25000
 
     # ----------------------
     # ALE Parameters
@@ -46,7 +46,7 @@ class Defaults:
     EPSILON_START = 1.0
     EPSILON_MIN = .1
     EPSILON_DECAY = 1000000
-    PHI_LENGTH = 4
+    PHI_LENGTH = 1
     UPDATE_FREQUENCY = 4
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32

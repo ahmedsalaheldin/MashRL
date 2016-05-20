@@ -42,7 +42,8 @@ int main(int argc, char** argv)
 	string task = "follow_the_line"; // follow line task
 	//string environment = "SingleRoom"; // reach flag task
 	string environment = "Line"; // follow line task
-	int frame_skip = 4;
+	int frame_skip = 1;
+	bool predictFlag;
 
 
 ///////////Connect to MASH Server/////////////
@@ -121,7 +122,13 @@ int main(int argc, char** argv)
 	arg.add("main");
 	for(int i=0; i<1000000;i++) //number of rounds
 	{	
-		bool predictFlag =1; // decide to use ground truth or agent predictions
+
+		if (i % 5 == 0){
+			predictFlag=0; // decide to use ground truth or agent predictions
+		}
+		else{
+			predictFlag=1;
+		}
 		counter=0; // number of frames elapsed in a round
 		while(replystr != "FINISHED" && counter < timeOut && replystr!= "FAILED") // while the round hasn't failed or succeeded yet, and time hasn't run out
 		{
@@ -178,7 +185,7 @@ int main(int argc, char** argv)
 			//cout<< "getsuggestion" <<endl;
 			socket.recv (&reply); // 
 			replystr = string(static_cast<char*>(reply.data()), reply.size());
-
+			cout<<"suggested action  "<<replystr<<endl;
 			//get reward
 			//cout<< "getreward" <<endl;
 			zmq::message_t getreward (10);

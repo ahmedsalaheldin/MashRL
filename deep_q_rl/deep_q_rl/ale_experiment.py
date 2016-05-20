@@ -138,12 +138,12 @@ class ALEExperiment(object):
 	if pred==3:
 		return "GO_BACKWARD"
 
-    def getmashImage(self):
+    def getmashImage(self,mash_message):
 	''' get frame from mash-simulator'''
-	mash_message = self.socket.recv()
+	#mash_message = self.socket.recv()
+	
 	mash_dec = json.loads(mash_message)
 	mash_instance =np.float32(np.asarray(mash_dec["A"]))
-	
 
 	#img = Image.fromarray(mash_instance)
 	#img.save('my2.png')
@@ -176,6 +176,20 @@ class ALEExperiment(object):
 
 	return reward
 
+    def getmashaction(self,mash_message):
+	''' get reward from mash-simulator'''
+	#mash_message = self.socket.recv()
+	print "suggested action = ", mash_message
+
+	if mash_message=="TURN_LEFT":
+		return 0
+	if mash_message=="TURN_RIGHT":
+		return 1
+	if mash_message=="GO_FORWARD":
+		return 2
+	if mash_message=="GO_BACKWARD":
+		return 3
+
     def run_episode(self, max_steps, testing):
         """Run a single training episode.
 
@@ -193,7 +207,15 @@ class ALEExperiment(object):
 
         start_lives = self.ale.lives()
 
-        action = self.agent.start_episode(self.getmashImage())
+	mash_message = self.socket.recv()
+	if len(mash_message)>100:
+		mashobservation = self.getmashImage(mash_message)
+		action = self.agent.start_episode(mashobservation)
+	else:
+		action = self.getmashaction(mash_message)
+
+	
+        
         #action = self.agent.start_episode(self.get_observation())
 	print "action = " , action
         num_steps = 0
@@ -221,8 +243,13 @@ class ALEExperiment(object):
                 self.agent.end_episode(reward, terminal)
                 break
 
-	    
-	    action = self.agent.step(reward, self.getmashImage())
+	    mash_message = self.socket.recv()
+	    if len(mash_message)>100:
+	        	mashobservation = self.getmashImage(mash_message)
+	 	        action = self.agent.step(reward, mashobservation)
+	    else:
+	        	action = self.getmashaction(mash_message)
+
 	    #print "action = " , action
 	    #action = self.agent.step(reward, self.get_observation())
 
