@@ -84,6 +84,7 @@ int main(int argc, char** argv)
 
 	
 	string replystr;
+	string replyact;
 
 	// Send Task
 	cout<<"sending"<<endl;
@@ -124,20 +125,26 @@ int main(int argc, char** argv)
 		counter=0; // number of frames elapsed in a round
 		while(replystr != "FINISHED" && counter < timeOut && replystr!= "FAILED") // while the round hasn't failed or succeeded yet, and time hasn't run out
 		{
-			
+		    if(predictFlag)	
+		    {
 			//send getview
-			//cout<< "getview" <<endl;
 			zmq::message_t getview (8);
 			memcpy ((void *) getview.data (), "GET_VIEW", 8);
 			socket.send (getview);
 			
 			//receive frame
-			//cout<< "revview" <<endl;
 			socket.recv (&reply); // 
 			replystr = string(static_cast<char*>(reply.data()), reply.size());
-			//cout<< replystr.length() <<endl;
-			//cout<< replystr[32810] <<endl;
+		    }
+		    else  //IF Demonstrating ///////////
+		    {
+			zmq::message_t getaction (10);
+			memcpy ((void *) getaction.data (), "GET_ACTION", 10);
+			socket.send (getaction);
 
+			socket.recv (&reply); // 
+			replystr = string(static_cast<char*>(reply.data()), reply.size());
+		    }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //				MAKE PREDICTION
@@ -148,8 +155,8 @@ int main(int argc, char** argv)
 			zmq::message_t request (msgstring.length());
 			memcpy ((void *) request.data (), msgstring.c_str(), msgstring.length());
 
-
 			socket2.send (request);
+
 
 			//get reply
 			zmq::message_t reply;
@@ -163,7 +170,6 @@ int main(int argc, char** argv)
 			for(int i=0;i<frame_skip;i++)
 			{
 			//send action
-			//cout<< "sendaction" <<endl;
 			zmq::message_t actionmsg (predictionStr.length());
 			memcpy ((void *) actionmsg.data (), predictionStr.c_str(), predictionStr.length());
 			socket.send (actionmsg);
