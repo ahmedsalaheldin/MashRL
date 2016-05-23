@@ -258,7 +258,7 @@ class ALEExperiment(object):
 	    else:
 	        	action = self.getmashaction(mash_message)
 
-	    if num_steps >= max_steps:
+	    if num_steps >= max_steps and terminal==0:
 		self.socket.send("Done")
 		#print "i send done"
 
