@@ -218,7 +218,7 @@ class ALEExperiment(object):
 		dummyobservation=dummyobservation.astype(np.uint8)
 		action = self.agent.start_episode(dummyobservation)
 		action = self.getmashaction(mash_message)
-		print "message = ", mash_message
+		#print "message = ", mash_message
 
 	
         
@@ -260,7 +260,7 @@ class ALEExperiment(object):
 
 	    if num_steps >= max_steps:
 		self.socket.send("Done")
-		print "i send done"
+		#print "i send done"
 
             if terminal or num_steps >= max_steps: #terminal is sent from mash simulator
                 self.agent.end_episode(reward, terminal)		
