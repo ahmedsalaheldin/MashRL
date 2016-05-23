@@ -44,6 +44,8 @@ int main(int argc, char** argv)
 	string environment = "Line"; // follow line task
 	int frame_skip = 1;
 	bool predictFlag;
+	bool testing=0;
+	bool roundended;
 
 
 ///////////Connect to MASH Server/////////////
@@ -129,7 +131,11 @@ int main(int argc, char** argv)
 		else{
 			predictFlag=1;
 		}
+		if(testing){
+			predictFlag=1;
+		}		
 		counter=0; // number of frames elapsed in a round
+		roundended=0;
 		while(replystr != "FINISHED" && counter < timeOut && replystr!= "FAILED") // while the round hasn't failed or succeeded yet, and time hasn't run out
 		{
 		    if(predictFlag)	
@@ -138,10 +144,7 @@ int main(int argc, char** argv)
 			zmq::message_t getview (8);
 			memcpy ((void *) getview.data (), "GET_VIEW", 8);
 			socket.send (getview);
-			
-			//receive frame
-			socket.recv (&reply); // 
-			replystr = string(static_cast<char*>(reply.data()), reply.size());
+
 		    }
 		    else  //IF Demonstrating ///////////
 		    {
@@ -149,9 +152,11 @@ int main(int argc, char** argv)
 			memcpy ((void *) getaction.data (), "GET_ACTION", 10);
 			socket.send (getaction);
 
-			socket.recv (&reply); // 
-			replystr = string(static_cast<char*>(reply.data()), reply.size());
 		    }
+			//receive frame or action
+	   	    socket.recv (&reply); // 
+		    replystr = string(static_cast<char*>(reply.data()), reply.size());
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //				MAKE PREDICTION
@@ -171,6 +176,13 @@ int main(int argc, char** argv)
 
 			predictionStr = string(static_cast<char*>(reply.data()), reply.size());
 
+		        if(predictionStr == "Done")	
+		        {
+				//cout<<"we are done"<<endl;
+				// end round
+				roundended=1;
+				break;
+		        }	
 			
 ///////////////////////////////////////////////////////////////////////////////////////////////	
 			float accReward=0;
@@ -248,6 +260,9 @@ int main(int argc, char** argv)
 
 		if(replystr=="FINISHED")
 			numFinish++;
+
+		result <<i<<","<< numFinish << endl;
+		//cout<<"numfinished  = "<<numFinish<<endl;
 		//resettask
 		zmq::message_t resettask (5);
 		memcpy ((void *) resettask.data (), "RESET", 5);
@@ -258,18 +273,28 @@ int main(int argc, char** argv)
 		replystr = string(static_cast<char*>(reply.data()), reply.size());
 
 		///////send terminal to RL server///////////////////////////////////
-		msgstring = "TERMINAL";
-		zmq::message_t request (msgstring.length());
-		memcpy ((void *) request.data (), msgstring.c_str(), msgstring.length());
+		if(roundended){
+			if (testing){
+				testing =0;
+			}
+			else{
+				testing=1;
+			}
+			continue;
+		}
+		else{
+			msgstring = "TERMINAL";
+			zmq::message_t request (msgstring.length());
+			memcpy ((void *) request.data (), msgstring.c_str(), msgstring.length());
 
-		socket2.send (request);
+			socket2.send (request);
 
-		//get thanks
-		socket2.recv (&reply);
+			//get thanks
+			socket2.recv (&reply);
+		}
 
 		////////////////////////////////////////////
-		result <<i<<","<< numFinish << endl;
-		cout<<"numfinished  = "<<numFinish<<endl;
+
 	}// end of all rounds
 	
 
