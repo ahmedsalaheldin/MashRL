@@ -86,6 +86,7 @@ class NeuralAgent(object):
         # will be used to store states and actions.
         self.last_img = None
         self.last_action = None
+	self.mashaction = None
 
     def _open_results_file(self):
         logging.info("OPENING " + self.exp_dir + '/results.csv')
@@ -172,7 +173,7 @@ class NeuralAgent(object):
         #TESTING---------------------------
         if self.testing:
             self.episode_reward += reward
-            action = self._choose_action(self.test_data_set, .05,
+            action = self._choose_action(self.test_data_set, 0.05,
                                          observation, np.clip(reward, -1, 1))
 
         #NOT TESTING---------------------------
