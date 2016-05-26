@@ -178,7 +178,7 @@ int main(int argc, char** argv)
 			socket2.recv (&reply);
 
 			// send action to prediction server DQN
-			msgstring = "TURN_LEFT";
+			msgstring = replyaction;
 			zmq::message_t sendaction (msgstring.length());
 			memcpy ((void *) sendaction.data (), msgstring.c_str(), msgstring.length());
 
