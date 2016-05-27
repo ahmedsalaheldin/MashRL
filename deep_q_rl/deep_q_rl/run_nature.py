@@ -15,7 +15,7 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 250000
+    STEPS_PER_EPOCH = 25000
     EPOCHS = 200
     STEPS_PER_TEST = 25000
 
@@ -43,7 +43,7 @@ class Defaults:
                  # rho/RMS_DECAY to track both the history of the gradient
                  # and the squared gradient.
     CLIP_DELTA = 1.0
-    EPSILON_START = 0.4
+    EPSILON_START = 0.5
     EPSILON_MIN = .1
     EPSILON_DECAY = 1000000
     PHI_LENGTH = 1

@@ -178,6 +178,7 @@ int main(int argc, char** argv)
 			socket2.recv (&reply);
 
 			// send action to prediction server DQN
+			//cout<<replyaction<<endl;
 			msgstring = replyaction;
 			zmq::message_t sendaction (msgstring.length());
 			memcpy ((void *) sendaction.data (), msgstring.c_str(), msgstring.length());
