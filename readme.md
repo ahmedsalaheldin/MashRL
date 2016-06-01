@@ -1,4 +1,5 @@
 This repository presents a framework to train intelligent agents to perform navigation tasks using deep RL learning.
+This repository heavily relies on deep-q-rl
 The agent is trained to perform navigation tasks from demonstrations.
 The agent can then perform these tasks autounoumously in a 3D simulator.
 
