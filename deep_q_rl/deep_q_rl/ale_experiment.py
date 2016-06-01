@@ -218,9 +218,10 @@ class ALEExperiment(object):
 	terminal = self.getmashTerminal()
 
 	mashobservation = self.getmashImage()
-	mashaction = self.getmashaction() 
+	mashaction = self.getmashaction()
+	self.agent.mashaction = mashaction 
 	action = self.agent.start_episode(mashobservation)
-	self.agent.mashaction = mashaction
+
 
         num_steps = 0
         while True:
@@ -247,9 +248,10 @@ class ALEExperiment(object):
 
 
             mashobservation = self.getmashImage()
-            mashaction = self.getmashaction() 
+            mashaction = self.getmashaction()
+	    self.agent.mashaction = mashaction 
             action = self.agent.step(reward,mashobservation)
-            self.agent.mashaction = mashaction
+            
 
 
 

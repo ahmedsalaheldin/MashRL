@@ -15,8 +15,8 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 250000
-    EPOCHS = 200
+    STEPS_PER_EPOCH = 25000
+    EPOCHS = 2000
     STEPS_PER_TEST = 25000
 
     # ----------------------
@@ -32,7 +32,7 @@ class Defaults:
     # ----------------------
     UPDATE_RULE = 'deepmind_rmsprop'
     BATCH_ACCUMULATOR = 'sum'
-    LEARNING_RATE = .00025
+    LEARNING_RATE = .0025
     DISCOUNT = .99
     RMS_DECAY = .95 # (Rho)
     RMS_EPSILON = .01
@@ -43,10 +43,10 @@ class Defaults:
                  # rho/RMS_DECAY to track both the history of the gradient
                  # and the squared gradient.
     CLIP_DELTA = 1.0
-    EPSILON_START = 0.4
+    EPSILON_START = 0.5
     EPSILON_MIN = .1
     EPSILON_DECAY = 1000000
-    PHI_LENGTH = 1
+    PHI_LENGTH = 4
     UPDATE_FREQUENCY = 4
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32

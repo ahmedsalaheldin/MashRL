@@ -18,6 +18,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 from updates import deepmind_rmsprop
+import Image
 
 
 class DeepQLearner:
@@ -195,7 +196,15 @@ class DeepQLearner:
 
         Returns: average loss
         """
-
+	'''for i in range(np.shape(states)[1]):
+		savestates=states[0][i]#.astype(np.uint8)
+		img = Image.fromarray(savestates)
+		img.save('savestates'+`i`+'.png')
+		savenext_states=next_states[0][i]#.astype(np.uint8)
+		img = Image.fromarray(savenext_states)
+		img.save('savenext_states'+`i`+'.png')'''
+	#print states[0][0][40][40]
+	#print np.shape(states)
         self.states_shared.set_value(states)
         self.next_states_shared.set_value(next_states)
         self.actions_shared.set_value(actions)
@@ -216,9 +225,15 @@ class DeepQLearner:
         return self._q_vals()[0]
 
     def choose_action(self, state, epsilon):
+
+	'''for i in range(np.shape(state)[0]):
+		savestate=state[i].astype(np.uint8)
+		img = Image.fromarray(savestate)
+		img.save('savestate'+`i`+'.png')'''
         if self.rng.rand() < epsilon:
             return self.rng.randint(0, self.num_actions)
         q_vals = self.q_vals(state)
+	print q_vals
         return np.argmax(q_vals)
 
     def reset_q_hat(self):

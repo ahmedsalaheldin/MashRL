@@ -81,7 +81,8 @@ actions, and rewards.
         1, plus img.
 
         """
-        indexes = np.arange(self.top - self.phi_length + 1, self.top)
+        #indexes = np.arange(self.top - self.phi_length + 1, self.top)
+        indexes = np.arange(self.top - (3*self.phi_length) + 3, self.top,3)
 
         phi = np.empty((self.phi_length, self.height, self.width), dtype=floatX)
         phi[0:self.phi_length - 1] = self.imgs.take(indexes,
@@ -116,9 +117,11 @@ next_states for batch_size randomly chosen state transitions.
             index = self.rng.randint(self.bottom,
                                      self.bottom + self.size - self.phi_length)
 
-            initial_indices = np.arange(index, index + self.phi_length)
+            #initial_indices = np.arange(index, index + self.phi_length)
+	    initial_indices = np.arange(index, index + (3*self.phi_length),3)
             transition_indices = initial_indices + 1
-            end_index = index + self.phi_length - 1
+            #end_index = index + self.phi_length - 1
+            end_index = index + 3*(self.phi_length - 1)
             
             # Check that the initial state corresponds entirely to a
             # single episode, meaning none but the last frame may be

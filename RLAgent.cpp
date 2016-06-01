@@ -38,10 +38,10 @@ int main(int argc, char** argv)
 	ArgumentsList arg ;
 	ArgumentsList actions ;
 	ArgumentsList empty;
-	//string task = "reach_1_flag"; // reach flag task
-	string task = "follow_the_line"; // follow line task
-	//string environment = "SingleRoom"; // reach flag task
-	string environment = "Line"; // follow line task
+	string task = "reach_1_flag"; // reach flag task
+	//string task = "follow_the_line"; // follow line task
+	string environment = "SingleRoom"; // reach flag task
+	//string environment = "Line"; // follow line task
 	int frame_skip = 1;
 	bool predictFlag;
 	bool testing=0;
@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 		    //receive  action MASH
 	   	    socket.recv (&reply); // 
 		    replyaction = string(static_cast<char*>(reply.data()), reply.size());
-
+		    //cout<<"get action  "<<replyaction<<endl;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,6 +178,7 @@ int main(int argc, char** argv)
 			socket2.recv (&reply);
 
 			// send action to prediction server DQN
+			//cout<<replyaction<<endl;
 			msgstring = replyaction;
 			zmq::message_t sendaction (msgstring.length());
 			memcpy ((void *) sendaction.data (), msgstring.c_str(), msgstring.length());
@@ -203,6 +204,7 @@ int main(int argc, char** argv)
 			zmq::message_t actionmsg (predictionStr.length());
 			memcpy ((void *) actionmsg.data (), predictionStr.c_str(), predictionStr.length());
 			socket.send (actionmsg);
+		        //cout<<"sent action  "<<predictionStr<<endl;
 
 			//receive suggested action
 			//cout<< "getsuggestion" <<endl;

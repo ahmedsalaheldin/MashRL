@@ -77,6 +77,7 @@ class NeuralAgent(object):
         self._open_learning_file()
 
         self.episode_counter = 0
+	self.training_episode = 0
         self.batch_counter = 0
 
         self.holdout_data = None
@@ -210,9 +211,18 @@ class NeuralAgent(object):
         """
 
         data_set.add_sample(self.last_img, self.last_action, reward, False)
-        if self.step_counter >= self.phi_length:
+        if self.step_counter >= 3*self.phi_length:
             phi = data_set.phi(cur_img)
-            action = self.network.choose_action(phi, epsilon)
+	    if self.testing:
+                action = self.network.choose_action(phi, epsilon)
+	    elif True: #self.training_episode%2==0:
+	        #if self.rng.rand() < epsilon:
+	        #    action= self.rng.randint(0, self.num_actions)
+	        #else:
+		#print "maaaaashhh"
+	        action= self.mashaction
+	    else:
+		action = self.network.choose_action(phi, epsilon)
         else:
             action = self.rng.randint(0, self.num_actions)
 
@@ -254,7 +264,7 @@ class NeuralAgent(object):
                 self.episode_counter += 1
                 self.total_reward += self.episode_reward
         else:
-
+	    self.training_episode +=1
             # Store the latest sample.
             self.data_set.add_sample(self.last_img,
                                      self.last_action,
