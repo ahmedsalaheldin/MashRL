@@ -216,7 +216,6 @@ class NeuralAgent(object):
 	    if self.testing:
                 action = self.network.choose_action(phi, epsilon)
 	    elif True: #self.training_episode%2==0:
-	    
 	        #if self.rng.rand() < epsilon:
 	        #    action= self.rng.randint(0, self.num_actions)
 	        #else:
@@ -224,7 +223,6 @@ class NeuralAgent(object):
 	        action= self.mashaction
 	    else:
 		action = self.network.choose_action(phi, epsilon)
-
         else:
             action = self.rng.randint(0, self.num_actions)
 
