@@ -162,8 +162,7 @@ class ALEExperiment(object):
 	mash_dec = json.loads(mash_message)
 	mash_reward =(mash_dec["A"])[0]
 	reward = int(mash_reward)
-
-	#self.socket.send("Thanks")    # send dummy server reply
+	
 
 	return reward
 
@@ -230,6 +229,10 @@ class ALEExperiment(object):
 	    mash_action = self.mashReply(action)# prepare to send to mash
 	    self.socket.send(mash_action) #send action to mash
 	    reward = self.getmashReward() #  get reward from mash
+
+	    '''if reward >0:
+		print "first reward ", num_steps
+		self.socket.send("Thanks")    # send dummy server reply'''
 
 	    num_steps += 1
 

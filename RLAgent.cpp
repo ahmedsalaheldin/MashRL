@@ -26,6 +26,7 @@ string Convert (float number)
 
 int main(int argc, char** argv)
 {
+	//usleep(25000 );
 	const int width = 120; //width of frame
 	const int height = 90; //height of frame
 	const int datasize = width*height*3; // 3 channel image size
@@ -307,6 +308,18 @@ int main(int argc, char** argv)
 
 		///////send terminal to RL server///////////////////////////////////
 		if(roundended){
+
+			// SEND DONE TO Simulator
+			//cout<<"DONE2"<<endl;
+			zmq::message_t resettask (4);
+			memcpy ((void *) resettask.data (), "DONE", 5);
+			socket.send (resettask);
+		
+			//receive OK
+			socket.recv (&reply); // 
+			replystr = string(static_cast<char*>(reply.data()), reply.size());
+
+////////////////////
 
 			msgstring = "NOTTERMINAL";
 			zmq::message_t endterminal (msgstring.length());
