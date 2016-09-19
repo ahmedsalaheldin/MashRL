@@ -52,6 +52,11 @@ class DeepQLearner:
 
         self.l_out = self.build_network(network_type, input_width, input_height,
                                         num_actions, num_frames, batch_size)
+
+        self.p_out = self.build_network(network_type, input_width, input_height,
+                                        num_actions, num_frames, batch_size)
+
+
         if self.freeze_interval > 0:
             self.next_l_out = self.build_network(network_type, input_width,
                                                  input_height, num_actions,
@@ -87,6 +92,11 @@ class DeepQLearner:
         q_vals = lasagne.layers.get_output(self.l_out, states / input_scale)
         current_q_vals = lasagne.layers.get_output(self.next_l_out, states / input_scale)
 
+	p_vals = lasagne.layers.get_output(self.p_out, states / input_scale)
+
+	next_p_vals = lasagne.layers.get_output(self.p_out,
+                                                    next_states / input_scale)
+
         
         if self.freeze_interval > 0:
             next_q_vals = lasagne.layers.get_output(self.next_l_out,
@@ -96,18 +106,26 @@ class DeepQLearner:
                                                     next_states / input_scale)
             next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
 
+	shaped_reward = self.discount * T.max(next_p_vals, axis=1, keepdims=True)
+	shaped_reward -= T.max(p_vals, axis=1, keepdims=True)
+
         target = (rewards +
                   (T.ones_like(terminals) - terminals) *
                   self.discount * T.max(next_q_vals, axis=1, keepdims=True))
 
+	target += (T.ones_like(terminals) - terminals) *shaped_reward
 
-	onehot_target=lasagne.utils.one_hot(actions[:,0],4)
+#########################
+	#onehot_target=lasagne.utils.one_hot(actions[:,0],4)
 
-	onehot_target = onehot_target*target
-	#onehot_target=q_vals
-	onehot_target = T.where(T.eq(onehot_target,0),current_q_vals,onehot_target)
+	#onehot_target = onehot_target*target
+	#onehot_target = T.where(T.eq(onehot_target,0),current_q_vals,onehot_target)
 
-        '''diff = target - q_vals[T.arange(batch_size),
+	#loss = lasagne.objectives.squared_error(q_vals,onehot_target)
+        #loss = loss.mean()
+#############################
+
+        diff = target - q_vals[T.arange(batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))
 
         if self.clip_delta > 0:
@@ -131,10 +149,9 @@ class DeepQLearner:
         elif batch_accumulator == 'mean':
             loss = T.mean(loss)
         else:
-            raise ValueError("Bad accumulator: {}".format(batch_accumulator))'''
+            raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
-	loss = lasagne.objectives.squared_error(q_vals,onehot_target)
-        loss = loss.mean()
+
 
         params = lasagne.layers.helper.get_all_params(self.l_out)  
         givens = {
@@ -225,10 +242,15 @@ class DeepQLearner:
         self.actions_shared.set_value(actions)
         self.rewards_shared.set_value(rewards)
         self.terminals_shared.set_value(terminals)
-        if (self.freeze_interval > 0 and
+        '''if (self.freeze_interval > 0 and
             self.update_counter % self.freeze_interval == 0):
-            self.reset_q_hat()
+            self.reset_q_hat()'''
+
         loss, _ = self._train()
+
+	if np.sqrt(loss)<0.02:
+            self.reset_q_hat()
+
 	#nqv = self._nextq_vals()
 	#print "next q = ", np.mean(nqv.max(1))
         self.update_counter += 1
@@ -385,10 +407,10 @@ class DeepQLearner:
             l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.HeUniform(),
+            W=lasagne.init.HeUniform(1),
             #W=lasagne.init.Constant(0),
             b=lasagne.init.Constant(.1)
-            #b=lasagne.init.Constant(0)
+            # b=lasagne.init.Constant(0)
         )
 
         return l_out
