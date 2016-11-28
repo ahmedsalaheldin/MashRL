@@ -15,9 +15,9 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 250000
-    EPOCHS = 200
-    STEPS_PER_TEST = 125000
+    STEPS_PER_EPOCH = 2500
+    EPOCHS = 2000
+    STEPS_PER_TEST = 100
 
     # ----------------------
     # ALE Parameters
@@ -43,16 +43,16 @@ class Defaults:
                  # rho/RMS_DECAY to track both the history of the gradient
                  # and the squared gradient.
     CLIP_DELTA = 1.0
-    EPSILON_START = 1.0
+    EPSILON_START = 1
     EPSILON_MIN = .1
-    EPSILON_DECAY = 1000000
-    PHI_LENGTH = 4
+    EPSILON_DECAY = 100000
+    PHI_LENGTH = 1
     UPDATE_FREQUENCY = 4
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
     NETWORK_TYPE = "nature_dnn"
-    FREEZE_INTERVAL = 10000
-    REPLAY_START_SIZE = 50000
+    FREEZE_INTERVAL = 2500
+    REPLAY_START_SIZE = 500
     RESIZE_METHOD = 'scale'
     RESIZED_WIDTH = 84
     RESIZED_HEIGHT = 84

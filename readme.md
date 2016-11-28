@@ -1,102 +1,95 @@
-This repository presents a framework to train intelligent agents to perform navigation tasks using deep RL learning.
-The agent is trained to perform navigation tasks from demonstrations.
-The agent can then perform these tasks autounoumously in a 3D simulator.
+This repository presents a framework to train intelligent agents to perform a navigation task using deep RL learning. Deep supervised learning is used to shape a reward from demonstrations. 
+This repository heavily relies on this implementation of DQN https://github.com/spragunr/deep_q_rl.
 
-The agents act within a 3D simulator, *mash-simulator* http://github.com/idiap/mash-simulator
+The agent acts in a 2D simulated environment and learns from raw visual information. The environment consists of a grid where each cell represents a state. A state is represented by an image of the cell number. The target is to reach a specific cell on the grid. The Grid can be set to any size and the environment is generated automatically.
 
 ##usage
 
 This repository consists of a number of modules.
 
--The simulator acts as a server that builds an environment for a selected task. Client agents can then act in that environment by sending an action to the server. The simulator calculates changes to the world based on the received action and sends the current status (in the form of an image) back to the client.
+-The 2D simulator acts as a server that builds an environment for a selected task. Client agents can then act in that environment by sending an action to the server. The simulator calculates changes to the world based on the received action and sends the current status (in the form of an image) back to the client.
 
--A stand alone deep learning module learns a mapping between observation( an image) and action from a collected dataset. The learned model is saved and can be used at any time by an agent. 
+-A stand alone deep learning module learns a reward shaping function that creates a mapping between observation( an image) and a potential reward from a collected set of demonstrations. The learned model is saved and can be used by the reinforcement learning algorithm to form the target rewards. 
 
--The prediction server receives an image from the client and returns a predicted action based on a trained model.
+-The prediction server receives an image from the client and learns a policy using deep reinforcement learning with reward shaping. The server returns a predicted action based on the trained policy to the client.
 
 -The agent Client which interacts with the simulation and prediction servers.
 
 A typical workflow of the system looks like this:
 	-Data collection
-		-A client connects to the simulation server
-		-The client receives frames from the server along with the optimal actions to take
-		-The client saves the observation and action pair to the training dataset
+		-Run simulation server in Play mode. 
+		-A deterministic policy performs the optimal actions to solve the task.
+		-These demonstrations are saved as a data set of observation, action pairs.
 		-After a sufficient amount of training samples is collected this process is terminated
-	-Training a model
-		-The training script uses the saved dataset to train a neural network.
+	-Training a deep reward shaping network
+		-The supervised learning script uses the saved dataset to train a neural network to shape rewards from observations.
 		-The trained model is saved.
-	-Performing the task
+	-Learning a policy using deep reinforcement learning
 		-A client connects to the simulation server
-		-The client also connects to a prediction server which loads the saved neural network.
+		-The client also connects to a prediction server which loads the saved reward shaping network.
 		-The client receives a frame from the simulator and sends it to the prediction server.
-		-The client receives an action from the prediction server and sends it to the simulator
-		-This process is repeated until the task is completed or as long as desired.
+		-The prediction replies with an action generated off-policy
+		-The client receives an action from the prediction server and sends it to the simulator.
+		-The action is performed in the simulator and a reward is returned to the client which sends it to the prediction server.
+		-The rewards along with the corrosponding states and actions are used to train the reinforcement learning algorithm
+		-This process is repeated until the desired number of training epochs is reached.
+		- During testing, the learned policy is used to generate actions (instead of off-policy random trials) and send them to the client.
 
-Active learning can be enabled at the prediction server. In that case, when the prediction server is not confident about a prediction, it will send a query rather than an action to the client. The client then uses the optimal actions provided by the simulator and saves the frame + action pair to a dataset.
+The reinforcement learning algorithm can be set to use or ignore the shaped rewards when creating target rewards for the cost function.
 
 ## Implementation details
 
-ImitationCNN.py Contains script for training neural network from a dataset
+TrainRewardShaping.py Script for training the reward shaping neural network from a dataset of demonstrations
 
-convServer.py The prediction server that loads a trained model.
+imageMatrixTask.py Creates the simulated environment and starts the server.
 
-Client.cpp The client used to interact with the simulation and prediction servers
+/deep_q_rl/deep_q_rl/run_nature.py The prediction server. Takes reward shaping network file as argument.
+
+RLAgent.cpp The client used to interact with the simulation and prediction servers
 
 
 ## Dependencies
-
-A number of dependicies are needed to run this project. Such as the 3d simulator, the deep learning library required to run the training script and IPC libraries to communicate infromation between different processes.
-Required repositories are downloaded and built automatically as submodules, however libraries that require system installation must be manually setup. 
 
 Following is a list of the required dependencies:
 
 ZeroMQ: A library for interprocess communication. Used to to send and receive messages between the agent and the prediction server. Python and C++ bindings are needed
 http://zeromq.org/intro:get-the-software
 
-Ogre: The graphics engine behind mash-simulator has some dependecies of its own
-http://www.ogre3d.org/tikiwiki/Prerequisites?tikiversion=Linux
-
 Theano: The deep learning library used to train the agent
 http://deeplearning.net/software/theano/install.html
 
+Lasagne: A Library used to build and train neural networks in Theano.
+https://github.com/Lasagne/Lasagne.git
 
 rapidjson: A library for serializing messages to be send between processes
 https://pypi.python.org/pypi/python-rapidjson/
 
 Submodules:
 
-Mash-Simulator: The 3D simulator used to conduct the navigation experiments.
-http://github.com/idiap/mash-simulator
-
-Theano based neural network scripts.
-http://github.com/lisa-lab/DeepLearningTutorials
-
 ZeroMQ C++ headerfile
 https://github.com/zeromq/cppzmq/blob/master/zmq.hpp
 
 ## Building
-
-run scrip.sh to download the dependecies, build them and build the agent client
-ImitationMASH$ ./script
+To build the client:
+MashRL$ mkdir build
+MashRL$ cd build 
+MashRL/build$ cmake .. 
+MashRL/build$ make
 
 ## Running
-run runServer.sh to start the simulator server
-ImitationMASH $./runServer
+To start the simulator server
+MashRL$ python imageMatrixTask.py
 
 To start the prediction server
-ImitationMASH $ cd DeepLearningTutorials/code
-code$ python convServer.py
+MashRL/deep_q_rl/deep_q_rl$ python run_nature.py
 
-To start the prediction server with active learning enabled
-code$ python convServer.py -a
+To start the prediction server with a reward shaping network
+MashRL/deep_q_rl/deep_q_rl$ python run_nature.py --nn-file network_file.pkl
 
-To run the training script
-ImitationMASH $ cd DeepLearningTutorials/code
-code$ python ImitationCNN.py
+To run the supervised learning script for the reward shaping network
+MashRL$ python TrainRewardShaping.py
 
-To run the Client to collect data (and act using the optimal actions provided by the server)
-ImitationMASH $ cd build
-build$ ./client
+To run the Client
+MashRL/build$ ./RLAgent
 
-To run the client with prediction enabled (uses predictions from the prediction server to act)
-build$ ./client -p
+

@@ -82,6 +82,7 @@ actions, and rewards.
 
         """
         indexes = np.arange(self.top - self.phi_length + 1, self.top)
+        #indexes = np.arange(self.top - (3*self.phi_length) + 3, self.top,3)
 
         phi = np.empty((self.phi_length, self.height, self.width), dtype=floatX)
         phi[0:self.phi_length - 1] = self.imgs.take(indexes,
@@ -117,8 +118,10 @@ next_states for batch_size randomly chosen state transitions.
                                      self.bottom + self.size - self.phi_length)
 
             initial_indices = np.arange(index, index + self.phi_length)
+	    #initial_indices = np.arange(index, index + (3*self.phi_length),3)
             transition_indices = initial_indices + 1
             end_index = index + self.phi_length - 1
+            #end_index = index + 3*(self.phi_length - 1)
             
             # Check that the initial state corresponds entirely to a
             # single episode, meaning none but the last frame may be
@@ -168,6 +171,8 @@ def simple_tests():
     print "LAST PHI", dataset.last_phi()
     print
     print 'BATCH', dataset.random_batch(2)
+    states, actions, rewards, next_states, terminal = dataset.random_batch(8)
+    print "shaaapeee =  ", np.shape(actions)
 
 
 def speed_tests():
@@ -256,7 +261,7 @@ def test_memory_usage_ok():
 
 def main():
     speed_tests()
-    test_memory_usage_ok()
+    #test_memory_usage_ok()
     max_size_tests()
     simple_tests()
 

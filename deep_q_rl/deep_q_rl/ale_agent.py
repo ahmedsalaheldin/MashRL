@@ -77,6 +77,7 @@ class NeuralAgent(object):
         self._open_learning_file()
 
         self.episode_counter = 0
+	self.training_episode = 0
         self.batch_counter = 0
 
         self.holdout_data = None
@@ -86,6 +87,7 @@ class NeuralAgent(object):
         # will be used to store states and actions.
         self.last_img = None
         self.last_action = None
+	self.mashaction = None
 
     def _open_results_file(self):
         logging.info("OPENING " + self.exp_dir + '/results.csv')
@@ -133,7 +135,14 @@ class NeuralAgent(object):
         self.loss_averages = []
 
         self.start_time = time.time()
-        return_action = self.rng.randint(0, self.num_actions)
+
+	if self.testing:
+		phi = self.data_set.phi(observation)
+                return_action = self.network.choose_action(phi, 0)
+
+	else:
+        	#return_action = self.rng.randint(0, self.num_actions)
+		return_action =1
 
         self.last_action = return_action
 
@@ -172,7 +181,7 @@ class NeuralAgent(object):
         #TESTING---------------------------
         if self.testing:
             self.episode_reward += reward
-            action = self._choose_action(self.test_data_set, .05,
+            action = self._choose_action(self.test_data_set, 0,
                                          observation, np.clip(reward, -1, 1))
 
         #NOT TESTING---------------------------
@@ -209,11 +218,25 @@ class NeuralAgent(object):
         """
 
         data_set.add_sample(self.last_img, self.last_action, reward, False)
+        #if self.step_counter >= 3*self.phi_length:
         if self.step_counter >= self.phi_length:
             phi = data_set.phi(cur_img)
-            action = self.network.choose_action(phi, epsilon)
+	    if self.testing:
+                action = self.network.choose_action(phi, epsilon)
+	    elif True:#self.training_episode<30:#self.rng.rand() < epsilon:
+	        #if self.rng.rand() < epsilon:
+	        #    action= self.rng.randint(0, self.num_actions)
+	        #else:
+		#print "maaaaashhh"
+	        action= self.mashaction
+		#action=1
+	    else:
+		#action = self.rng.randint(0, self.num_actions)
+		action = self.network.choose_action(phi, epsilon)
         else:
             action = self.rng.randint(0, self.num_actions)
+	    #action =1 #always go right if not enough frames
+	    #print "random"
 
         return action
 
@@ -226,6 +249,8 @@ class NeuralAgent(object):
         states, actions, rewards, next_states, terminals = \
                                 self.data_set.random_batch(
                                     self.network.batch_size)
+	#print "rewards = ", np.mean(rewards)
+	#print "########################################"
         return self.network.train(states, actions, rewards,
                                   next_states, terminals)
 
@@ -253,7 +278,7 @@ class NeuralAgent(object):
                 self.episode_counter += 1
                 self.total_reward += self.episode_reward
         else:
-
+	    self.training_episode +=1
             # Store the latest sample.
             self.data_set.add_sample(self.last_img,
                                      self.last_action,

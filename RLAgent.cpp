@@ -26,6 +26,7 @@ string Convert (float number)
 
 int main(int argc, char** argv)
 {
+	//usleep(25000 );
 	const int width = 120; //width of frame
 	const int height = 90; //height of frame
 	const int datasize = width*height*3; // 3 channel image size
@@ -38,11 +39,14 @@ int main(int argc, char** argv)
 	ArgumentsList arg ;
 	ArgumentsList actions ;
 	ArgumentsList empty;
-	//string task = "reach_1_flag"; // reach flag task
-	string task = "follow_the_line"; // follow line task
-	//string environment = "SingleRoom"; // reach flag task
-	string environment = "Line"; // follow line task
-	int frame_skip = 4;
+	string task = "reach_1_flag"; // reach flag task
+	//string task = "follow_the_line"; // follow line task
+	string environment = "SingleRoom"; // reach flag task
+	//string environment = "Line"; // follow line task
+	int frame_skip = 1;
+	bool predictFlag;
+	bool testing=0;
+	bool roundended;
 
 
 ///////////Connect to MASH Server/////////////
@@ -84,6 +88,8 @@ int main(int argc, char** argv)
 
 	
 	string replystr;
+	string replyaction;
+	string replyframe;
 
 	// Send Task
 	cout<<"sending"<<endl;
@@ -120,59 +126,92 @@ int main(int argc, char** argv)
 	arg.add("main");
 	for(int i=0; i<1000000;i++) //number of rounds
 	{	
-		bool predictFlag =1; // decide to use ground truth or agent predictions
+
+		predictFlag=1;	
 		counter=0; // number of frames elapsed in a round
-		while(replystr != "FINISHED" && counter < timeOut && replystr!= "FAILED") // while the round hasn't failed or succeeded yet, and time hasn't run out
+		roundended=0;
+		//counter < timeOut &&
+		while(replystr != "FINISHED" &&  replystr!= "FAILED") // while the round hasn't failed or succeeded yet, and time hasn't run out
 		{
-			
-			//send getview
-			//cout<< "getview" <<endl;
-			zmq::message_t getview (8);
-			memcpy ((void *) getview.data (), "GET_VIEW", 8);
-			socket.send (getview);
-			
-			//receive frame
-			//cout<< "revview" <<endl;
-			socket.recv (&reply); // 
-			replystr = string(static_cast<char*>(reply.data()), reply.size());
-			//cout<< replystr.length() <<endl;
-			//cout<< replystr[32810] <<endl;
+
+		    // Declare non terminal DQN
+		    msgstring = "NOTTERMINAL";
+		    zmq::message_t terminal (msgstring.length());
+		    memcpy ((void *) terminal.data (), msgstring.c_str(), msgstring.length());
+
+		    socket2.send (terminal);
+		    socket2.recv (&reply);//get thanks
+
+		    //send getview MASH
+		    zmq::message_t getview (8);
+		    memcpy ((void *) getview.data (), "GET_VIEW", 8);
+		    socket.send (getview);
+
+		    //receive frame MASH
+	   	    socket.recv (&reply); // 
+		    replyframe = string(static_cast<char*>(reply.data()), reply.size());
+
+		    //send getaction MASH
+		    zmq::message_t getaction (10);
+		    memcpy ((void *) getaction.data (), "GET_ACTION", 10);
+		    socket.send (getaction);
+
+		    //receive  action MASH
+	   	    socket.recv (&reply); // 
+		    replyaction = string(static_cast<char*>(reply.data()), reply.size());
+		    //cout<<"get action  "<<replyaction<<endl;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //				MAKE PREDICTION
 ///////////////////////////////////////////////////////////////////////////////////////////////	
 
-			// send frame to prediction server
-			msgstring = replystr;
-			zmq::message_t request (msgstring.length());
-			memcpy ((void *) request.data (), msgstring.c_str(), msgstring.length());
+			// send frame to prediction server DQN
+			msgstring = replyframe;
+			zmq::message_t sendframe (msgstring.length());
+			memcpy ((void *) sendframe.data (), msgstring.c_str(), msgstring.length());
+
+			socket2.send (sendframe);
 
 
-			socket2.send (request);
+			//get thanks DQN
+			//zmq::message_t reply;
+			socket2.recv (&reply);
 
-			//get reply
-			zmq::message_t reply;
+			// send action to prediction server DQN
+			//cout<<replyaction<<endl;
+			msgstring = replyaction;
+			zmq::message_t sendaction (msgstring.length());
+			memcpy ((void *) sendaction.data (), msgstring.c_str(), msgstring.length());
+
+			socket2.send (sendaction);
+
+
+			//get action DQN
+			//zmq::message_t reply;
 			socket2.recv (&reply);
 
 			predictionStr = string(static_cast<char*>(reply.data()), reply.size());
 
+	
 			
-///////////////////////////////////////////////////////////////////////////////////////////////	
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                      GET REWARD FROM MASH
+	
 			float accReward=0;
 			for(int i=0;i<frame_skip;i++)
 			{
 			//send action
-			//cout<< "sendaction" <<endl;
 			zmq::message_t actionmsg (predictionStr.length());
 			memcpy ((void *) actionmsg.data (), predictionStr.c_str(), predictionStr.length());
 			socket.send (actionmsg);
+		        //cout<<"sent action  "<<predictionStr<<endl;
 
 			//receive suggested action
 			//cout<< "getsuggestion" <<endl;
 			socket.recv (&reply); // 
 			replystr = string(static_cast<char*>(reply.data()), reply.size());
-
+			//cout<<"suggested action  "<<replystr<<endl;
 			//get reward
 			//cout<< "getreward" <<endl;
 			zmq::message_t getreward (10);
@@ -215,9 +254,29 @@ int main(int argc, char** argv)
 
 			socket2.send(reward_msg);
 
-			socket2.recv (&reply); // dummy reply
+			//socket2.recv (&reply); // dummy reply
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+			//receive if timed out DQN
+			//zmq::message_t reply;
+			socket2.recv (&reply);
+
+			replystr = string(static_cast<char*>(reply.data()), reply.size());
+		        if(replystr == "Done")	
+		        {
+				cout<<"DONE"<<endl;
+				roundended=1;
+				break;
+		        }
+			else if(replystr == "NOTDone")
+			{// Do nothing
+				//cout<<"NOTDone"<<endl;
+			}
+			else
+			{
+				cout<<"ERROR: DONE = "<<replystr<<endl;
+			}
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 			//is round finished/failed?
 			//cout<< "getreward" <<endl;
@@ -231,22 +290,61 @@ int main(int argc, char** argv)
 			replystr = string(static_cast<char*>(reply.data()), reply.size());
 
 			counter++;
-		}//End of one round
+		}//End of one round ///////////////////////////////////////////////
 
 		if(replystr=="FINISHED")
 			numFinish++;
+
+		result <<i<<","<< numFinish << endl;
+		//cout<<"numfinished  = "<<numFinish<<endl;
 		//resettask
 		zmq::message_t resettask (5);
 		memcpy ((void *) resettask.data (), "RESET", 5);
 		socket.send (resettask);
 		
-		//receive reward
-		//cout<< "recreward" <<endl;
+		//receive OK
 		socket.recv (&reply); // 
 		replystr = string(static_cast<char*>(reply.data()), reply.size());
 
-		result <<i<<","<< numFinish << endl;
-		cout<<"numfinished  = "<<numFinish<<endl;
+		///////send terminal to RL server///////////////////////////////////
+		if(roundended){
+
+			// SEND DONE TO Simulator
+			//cout<<"DONE2"<<endl;
+			zmq::message_t resettask (4);
+			memcpy ((void *) resettask.data (), "DONE", 5);
+			socket.send (resettask);
+		
+			//receive OK
+			socket.recv (&reply); // 
+			replystr = string(static_cast<char*>(reply.data()), reply.size());
+
+////////////////////
+
+			msgstring = "NOTTERMINAL";
+			zmq::message_t endterminal (msgstring.length());
+			memcpy ((void *) endterminal.data (), msgstring.c_str(), msgstring.length());
+
+			socket2.send (endterminal);
+
+			//get thanks
+			socket2.recv (&reply);
+
+			//continue;
+		}
+		else{
+			msgstring = "TERMINAL";
+			zmq::message_t endterminal (msgstring.length());
+			memcpy ((void *) endterminal.data (), msgstring.c_str(), msgstring.length());
+
+			socket2.send (endterminal);
+
+			//get thanks
+			socket2.recv (&reply);
+		}
+
+		////////////////////////////////////////////
+
 	}// end of all rounds
 	
 
