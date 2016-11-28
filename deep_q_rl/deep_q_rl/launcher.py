@@ -244,6 +244,7 @@ def launch(args, defaults, description):
 
         all_params = lasagne.layers.helper.get_all_param_values(network1.l_out)
         lasagne.layers.helper.set_all_param_values(network.l_out, all_params)
+        lasagne.layers.helper.set_all_param_values(network.p_out, all_params)
 
     agent = ale_agent.NeuralAgent(network,
                                   parameters.epsilon_start,
