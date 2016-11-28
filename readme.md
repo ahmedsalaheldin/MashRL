@@ -1,5 +1,6 @@
 This repository presents a framework to train intelligent agents to perform a navigation task using deep RL learning. Deep supervised learning is used to shape a reward from demonstrations. 
-This repository heavily relies on this implementation of DQN https://github.com/spragunr/deep_q_rl
+This repository heavily relies on this implementation of DQN https://github.com/spragunr/deep_q_rl.
+
 The agent acts in a 2D simulated environment and learns from raw visual information. The environment consists of a grid where each cell represents a state. A state is represented by an image of the cell number. The target is to reach a specific cell on the grid. The Grid can be set to any size and the environment is generated automatically.
 
 ##usage
