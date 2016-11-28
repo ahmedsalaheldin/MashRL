@@ -19,7 +19,7 @@ import theano
 import theano.tensor as T
 from updates import deepmind_rmsprop
 import Image
-
+from termcolor import colored
 
 class DeepQLearner:
     """
@@ -53,10 +53,8 @@ class DeepQLearner:
         self.l_out = self.build_network(network_type, input_width, input_height,
                                         num_actions, num_frames, batch_size)
 
-        self.p_out = self.build_network(network_type, input_width, input_height,
+	self.p_out = self.build_network(network_type, input_width, input_height,
                                         num_actions, num_frames, batch_size)
-
-
         if self.freeze_interval > 0:
             self.next_l_out = self.build_network(network_type, input_width,
                                                  input_height, num_actions,
@@ -94,9 +92,7 @@ class DeepQLearner:
 
 	p_vals = lasagne.layers.get_output(self.p_out, states / input_scale)
 
-	next_p_vals = lasagne.layers.get_output(self.p_out,
-                                                    next_states / input_scale)
-
+	next_p_vals = lasagne.layers.get_output(self.p_out, next_states / input_scale)	
         
         if self.freeze_interval > 0:
             next_q_vals = lasagne.layers.get_output(self.next_l_out,
@@ -108,6 +104,7 @@ class DeepQLearner:
 
 	shaped_reward = self.discount * T.max(next_p_vals, axis=1, keepdims=True)
 	shaped_reward -= T.max(p_vals, axis=1, keepdims=True)
+	#######shaped_reward += p_vals[T.arange(batch_size),actions.reshape((-1,))]
 
         target = (rewards +
                   (T.ones_like(terminals) - terminals) *
@@ -115,15 +112,13 @@ class DeepQLearner:
 
 	target += (T.ones_like(terminals) - terminals) *shaped_reward
 
-#########################
+
+
 	#onehot_target=lasagne.utils.one_hot(actions[:,0],4)
 
 	#onehot_target = onehot_target*target
-	#onehot_target = T.where(T.eq(onehot_target,0),current_q_vals,onehot_target)
 
-	#loss = lasagne.objectives.squared_error(q_vals,onehot_target)
-        #loss = loss.mean()
-#############################
+	#onehot_target = T.where(T.eq(onehot_target,0),current_q_vals,onehot_target)
 
         diff = target - q_vals[T.arange(batch_size),
                                actions.reshape((-1,))].reshape((-1, 1))
@@ -151,7 +146,8 @@ class DeepQLearner:
         else:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
-
+	#loss = lasagne.objectives.squared_error(q_vals,onehot_target)
+        #loss = loss.mean()
 
         params = lasagne.layers.helper.get_all_params(self.l_out)  
         givens = {
@@ -180,8 +176,12 @@ class DeepQLearner:
                                       givens=givens,on_unused_input='warn')
         self._q_vals = theano.function([], q_vals,
                                        givens={states: self.states_shared})
+        self._p_vals = theano.function([], p_vals,
+                                       givens={states: self.states_shared})
         self._nextq_vals = theano.function([], next_q_vals,
                                        givens={next_states: self.next_states_shared})
+        self._current_q_vals = theano.function([], current_q_vals,
+                                       givens={states: self.states_shared})
 
     def build_network(self, network_type, input_width, input_height,
                       output_dim, num_frames, batch_size):
@@ -248,8 +248,8 @@ class DeepQLearner:
 
         loss, _ = self._train()
 
-	if np.sqrt(loss)<0.02:
-            self.reset_q_hat()
+	if(np.sqrt(loss)<0.02):
+		self.reset_q_hat()
 
 	#nqv = self._nextq_vals()
 	#print "next q = ", np.mean(nqv.max(1))
@@ -263,12 +263,26 @@ class DeepQLearner:
         self.states_shared.set_value(states)
         return self._q_vals()[0]
 
+    def p_vals(self, state):
+        states = np.zeros((self.batch_size, self.num_frames, self.input_height,
+                           self.input_width), dtype=theano.config.floatX)
+        states[0, ...] = state
+        self.states_shared.set_value(states)
+        return self._p_vals()[0]
+
     def F_next_q_vals(self, state):
         states = np.zeros((self.batch_size, self.num_frames, self.input_height,
                            self.input_width), dtype=theano.config.floatX)
         states[0, ...] = state
         self.next_states_shared.set_value(states)
         return self._nextq_vals()[0]
+
+    def F_current_q_vals(self, state):
+        states = np.zeros((self.batch_size, self.num_frames, self.input_height,
+                           self.input_width), dtype=theano.config.floatX)
+        states[0, ...] = state
+        self.states_shared.set_value(states)
+        return self._current_q_vals()[0]
 
     def choose_action(self, state, epsilon):
 
@@ -279,9 +293,10 @@ class DeepQLearner:
         if self.rng.rand() < epsilon:
             return self.rng.randint(0, self.num_actions)
         q_vals = self.q_vals(state)
+	p_vals = self.p_vals(state)
 	print q_vals
-	#print self.F_next_q_vals(state)
-        return np.argmax(q_vals)
+	print colored(self.F_current_q_vals(state),'red')
+        return np.argmax(p_vals)
 
     def reset_q_hat(self):
         all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
@@ -407,10 +422,10 @@ class DeepQLearner:
             l_hidden1,
             num_units=output_dim,
             nonlinearity=None,
-            W=lasagne.init.HeUniform(1),
+            W=lasagne.init.HeUniform(0.1),
             #W=lasagne.init.Constant(0),
-            b=lasagne.init.Constant(.1)
-            # b=lasagne.init.Constant(0)
+            b=lasagne.init.Constant(.01)
+            #b=lasagne.init.Constant(0)
         )
 
         return l_out
