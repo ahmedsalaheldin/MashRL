@@ -223,7 +223,7 @@ class NeuralAgent(object):
             phi = data_set.phi(cur_img)
 	    if self.testing:
                 action = self.network.choose_action(phi, epsilon)
-	    elif True:#self.training_episode<30:#self.rng.rand() < epsilon:
+	    elif False:#self.training_episode<30:#self.rng.rand() < epsilon:
 	        #if self.rng.rand() < epsilon:
 	        #    action= self.rng.randint(0, self.num_actions)
 	        #else:
